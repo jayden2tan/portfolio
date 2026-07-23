@@ -192,6 +192,82 @@
       transition: opacity var(--transition-normal);
     }
 
+    /* Custom Cursor */
+    .cursor-dot,
+    .cursor-outline {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      border-radius: 50%;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+    }
+
+    .cursor-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--accent);
+      transition: opacity 0.2s ease, transform 0.15s ease;
+    }
+
+    .cursor-outline {
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid rgba(var(--accent-rgb), 0.5);
+      transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    /* Grows and fills when hovering interactive elements */
+    .cursor-outline.cursor-hover {
+      width: 56px;
+      height: 56px;
+      background-color: rgba(var(--accent-rgb), 0.1);
+      border-color: var(--accent);
+    }
+
+    .cursor-dot.cursor-hover {
+      transform: translate(-50%, -50%) scale(0);
+    }
+
+    /* Text-input cursor variant: morphs into an I-beam shape */
+    .cursor-dot.cursor-text {
+      width: 2px;
+      height: 22px;
+      border-radius: 1px;
+      background-color: var(--accent);
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .cursor-outline.cursor-text {
+      width: 2px;
+      height: 22px;
+      border-radius: 1px;
+      border: none;
+      background-color: transparent;
+      opacity: 0;
+    }
+
+    /* Hide custom cursor on touch devices — they have no real pointer */
+    @media (hover: none) and (pointer: coarse) {
+
+      .cursor-dot,
+      .cursor-outline {
+        display: none;
+      }
+    }
+
+    /* Show real system cursor everywhere by default; hidden only once JS confirms a mouse is present */
+    body.custom-cursor-active,
+    body.custom-cursor-active a,
+    body.custom-cursor-active button,
+    body.custom-cursor-active input,
+    body.custom-cursor-active textarea,
+    body.custom-cursor-active .form-input,
+    body.custom-cursor-active .form-textarea {
+      cursor: none;
+    }
+
     /* ==========================================
        TYPOGRAPHY, UTILITIES & REFINEMENTS
        ========================================== */
@@ -1491,6 +1567,10 @@
   <!-- Animated Particle Canvas -->
   <canvas id="background-canvas"></canvas>
 
+  <!-- Custom Cursor Elements -->
+  <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-outline" id="cursor-outline" aria-hidden="true"></div>
+
   <!-- Scroll Progress Indicator -->
   <div id="scroll-progress" aria-hidden="true"></div>
 
@@ -1826,14 +1906,18 @@
         <div class="experience-card">
           <div class="exp-header">
             <div class="exp-title-group">
-              <h3 class="exp-role">[EDIT] Student Developer</h3>
-              <span class="exp-company">[EDIT] Self-Directed Projects & Cybersecurity Learning</span>
+              <h3 class="exp-role"> Student</h3>
+              <span class="exp-company">NYU Tandon School of Engineering</span>
             </div>
-            <span class="exp-date">[EDIT] 2024 - Present</span>
+            <span class="exp-date">Jul 2026 - Present</span>
           </div>
-          <p class="exp-desc">[EDIT] Build and test local scripts; experiment with core network scanning protocols,
-            basic cryptography vaults, and automation templates. Practice computer vision algorithms utilizing
-            open-source libraries.</p>
+          <p class="exp-desc">Computer Science For Cyber Security (CS4CS)</p>
+          <ul>
+            <li>Competitive summer program where I gained foundational skills in Cybersecurity, Cryptography, Digital
+              Forensics, and the Linux operating system.</li>
+            <li>Acquired experience through Capture the Flag (CTF) activities.</li>
+            <li>Collaborated with peers on hands-on projects and cybersecurity challenges.</li>
+          </ul>
         </div>
       </div>
 
@@ -2046,6 +2130,87 @@
 
       // Set current footer copyright year dynamically
       document.getElementById('current-year').textContent = new Date().getFullYear();
+
+      // ==========================================
+      // CUSTOM CURSOR
+      // ==========================================
+      const cursorDot = document.getElementById('cursor-dot');
+      const cursorOutline = document.getElementById('cursor-outline');
+
+      let mouseX = window.innerWidth / 2;
+      let mouseY = window.innerHeight / 2;
+      let outlineX = mouseX;
+      let outlineY = mouseY;
+
+      const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+      if (!isTouchDevice) {
+        document.body.classList.add('custom-cursor-active');
+
+        window.addEventListener('mousemove', (e) => {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+          cursorDot.style.left = `${mouseX}px`;
+          cursorDot.style.top = `${mouseY}px`;
+        });
+
+        // Smoothly trail the outline behind the dot
+        const animateOutline = () => {
+          outlineX += (mouseX - outlineX) * 0.15;
+          outlineY += (mouseY - outlineY) * 0.15;
+          cursorOutline.style.left = `${outlineX}px`;
+          cursorOutline.style.top = `${outlineY}px`;
+          requestAnimationFrame(animateOutline);
+        };
+        animateOutline();
+
+        // Grow cursor on hoverable elements (buttons, links, pills, cards)
+        const hoverTargets = document.querySelectorAll('a, button, .skill-pill, .focus-pill, [data-tilt]');
+        hoverTargets.forEach(el => {
+          el.addEventListener('mouseenter', () => {
+            cursorOutline.classList.add('cursor-hover');
+            cursorDot.classList.add('cursor-hover');
+          });
+          el.addEventListener('mouseleave', () => {
+            cursorOutline.classList.remove('cursor-hover');
+            cursorDot.classList.remove('cursor-hover');
+          });
+        });
+
+        // Morph cursor into an I-beam over text inputs and textareas
+        const textTargets = document.querySelectorAll('.form-input, .form-textarea');
+        textTargets.forEach(el => {
+          el.addEventListener('mouseenter', () => {
+            cursorDot.classList.add('cursor-text');
+            cursorOutline.classList.add('cursor-text');
+          });
+          el.addEventListener('mouseleave', () => {
+            cursorDot.classList.remove('cursor-text');
+            cursorOutline.classList.remove('cursor-text');
+          });
+          // Keep I-beam shown while actively typing/focused, even if the mouse
+          // moves off the field slightly (e.g. dragging a selection)
+          el.addEventListener('focus', () => {
+            cursorDot.classList.add('cursor-text');
+            cursorOutline.classList.add('cursor-text');
+          });
+          el.addEventListener('blur', () => {
+            cursorDot.classList.remove('cursor-text');
+            cursorOutline.classList.remove('cursor-text');
+          });
+        });
+
+        // Hide cursor visuals when mouse leaves the window
+        document.addEventListener('mouseleave', () => {
+          cursorDot.style.opacity = '0';
+          cursorOutline.style.opacity = '0';
+        });
+        document.addEventListener('mouseenter', () => {
+          cursorDot.style.opacity = '1';
+          cursorOutline.style.opacity = '1';
+        });
+      }
+
 
       // ==========================================
       // MOBILE NAVIGATION DRAWER
@@ -2333,6 +2498,22 @@
       let particles = [];
       const particleCount = 200; // Subtle amount to conserve CPU/battery
 
+      // Track live mouse position for particle interaction (separate from the custom cursor's own trackers)
+      let particleMouseX = -9999;
+      let particleMouseY = -9999;
+      const repulsionRadius = 120;   // How close the mouse needs to be to affect a particle
+      const repulsionStrength = 1.8; // How hard particles get pushed away
+
+      window.addEventListener('mousemove', (e) => {
+        particleMouseX = e.clientX;
+        particleMouseY = e.clientY;
+      });
+
+      window.addEventListener('mouseleave', () => {
+        particleMouseX = -9999;
+        particleMouseY = -9999;
+      });
+
       const resizeCanvas = () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -2346,14 +2527,30 @@
           this.x = Math.random() * canvas.width;
           this.y = Math.random() * canvas.height;
           this.size = Math.random() * 3 + 1; // Small dust nodes
-          this.speedX = Math.random() * 0.6 - 0.3;
-          this.speedY = Math.random() * 0.6 - 0.3;
+          this.baseSpeedX = Math.random() * 0.8 - 0.4;
+          this.baseSpeedY = Math.random() * 0.8 - 0.4;
           this.alpha = Math.random() * 0.4 + 0.1;
         }
 
         update() {
-          this.x += this.speedX;
-          this.y += this.speedY;
+          // Base ambient drift
+          let vx = this.baseSpeedX;
+          let vy = this.baseSpeedY;
+
+          // Repulsion from the cursor
+          const dx = this.x - particleMouseX;
+          const dy = this.y - particleMouseY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < repulsionRadius) {
+            const force = (1 - dist / repulsionRadius) * repulsionStrength;
+            const angle = Math.atan2(dy, dx);
+            vx += Math.cos(angle) * force;
+            vy += Math.sin(angle) * force;
+          }
+
+          this.x += vx;
+          this.y += vy;
 
           // Screen wraps
           if (this.x < 0) this.x = canvas.width;
