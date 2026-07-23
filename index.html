@@ -199,52 +199,58 @@
       top: 0;
       left: 0;
       pointer-events: none;
-      border-radius: 50%;
       z-index: 9999;
       transform: translate(-50%, -50%);
     }
 
+    /* Outline ring is no longer used visually — kept in DOM but hidden */
     .cursor-dot {
-      width: 8px;
-      height: 8px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
       background-color: var(--accent);
-      transition: opacity 0.2s ease, transform 0.15s ease;
+      box-shadow: 0 0 12px 4px rgba(var(--accent-rgb), 0.6),
+        0 0 24px 8px rgba(var(--accent-rgb), 0.3);
+      opacity: 1;
+      transition: width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
     }
 
+    /* Outline ring: invisible by default, only shown on hover */
     .cursor-outline {
       width: 36px;
       height: 36px;
+      border-radius: 50%;
       border: 1.5px solid rgba(var(--accent-rgb), 0.5);
-      transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+      background-color: transparent;
+      opacity: 0;
+      transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
     }
 
-    /* Grows and fills when hovering interactive elements */
+    /* On hover: dot disappears, transparent ring appears and grows */
+    .cursor-dot.cursor-hover {
+      opacity: 0;
+    }
+
     .cursor-outline.cursor-hover {
       width: 56px;
       height: 56px;
-      background-color: rgba(var(--accent-rgb), 0.1);
       border-color: var(--accent);
+      opacity: 1;
     }
 
-    .cursor-dot.cursor-hover {
-      transform: translate(-50%, -50%) scale(0);
-    }
-
-    /* Text-input cursor variant: morphs into an I-beam shape */
+    /* Text-input cursor variant: morphs the dot into a thick glowing I-beam */
     .cursor-dot.cursor-text {
-      width: 2px;
-      height: 22px;
-      border-radius: 1px;
+      width: 4px;
+      height: 24px;
+      border-radius: 2px;
       background-color: var(--accent);
+      box-shadow: 0 0 10px 3px rgba(var(--accent-rgb), 0.7),
+        0 0 20px 6px rgba(var(--accent-rgb), 0.35);
       transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
     }
 
     .cursor-outline.cursor-text {
-      width: 2px;
-      height: 22px;
-      border-radius: 1px;
-      border: none;
-      background-color: transparent;
       opacity: 0;
     }
 
@@ -266,6 +272,12 @@
     body.custom-cursor-active .form-input,
     body.custom-cursor-active .form-textarea {
       cursor: none;
+    }
+
+    /* Hide both cursor elements when the mouse leaves the browser window */
+    body.cursor-window-hidden .cursor-dot,
+    body.cursor-window-hidden .cursor-outline {
+      opacity: 0 !important;
     }
 
     /* ==========================================
@@ -1601,7 +1613,9 @@
           <li><a href="#about" class="nav-link">About</a></li>
           <li><a href="#projects" class="nav-link">Projects</a></li>
           <li><a href="#experience" class="nav-link">Experience</a></li>
-          <li><a href="#contact" class="nav-link">Contact</a></li>
+
+          <!-- [EDIT] REIMPLEMENT THIS AFTER PROJECTS ADDED -->
+          <!-- <li><a href="#contact" class="nav-link">Contact</a></li> -->
         </ul>
 
         <div class="nav-controls">
@@ -2165,9 +2179,25 @@
         animateOutline();
 
         // Grow cursor on hoverable elements (buttons, links, pills, cards)
+        // Grow cursor on hoverable elements (buttons, links, pills, cards)
         const hoverTargets = document.querySelectorAll('a, button, .skill-pill, .focus-pill, [data-tilt]');
         hoverTargets.forEach(el => {
+          // Make sure clicks/hovers on icons or text inside the element
+          // don't cause the parent's mouseenter/mouseleave to refire
+          el.style.pointerEvents = 'auto';
+          Array.from(el.children).forEach(child => {
+            child.style.pointerEvents = 'none';
+          });
+
           el.addEventListener('mouseenter', () => {
+            // Snap the trailing outline to the current position instantly,
+            // instead of letting it ease in from wherever it lagged behind —
+            // this eliminates the "teleport" look when entering fast
+            outlineX = mouseX;
+            outlineY = mouseY;
+            cursorOutline.style.left = `${outlineX}px`;
+            cursorOutline.style.top = `${outlineY}px`;
+
             cursorOutline.classList.add('cursor-hover');
             cursorDot.classList.add('cursor-hover');
           });
@@ -2202,12 +2232,10 @@
 
         // Hide cursor visuals when mouse leaves the window
         document.addEventListener('mouseleave', () => {
-          cursorDot.style.opacity = '0';
-          cursorOutline.style.opacity = '0';
+          document.body.classList.add('cursor-window-hidden');
         });
         document.addEventListener('mouseenter', () => {
-          cursorDot.style.opacity = '1';
-          cursorOutline.style.opacity = '1';
+          document.body.classList.remove('cursor-window-hidden');
         });
       }
 
