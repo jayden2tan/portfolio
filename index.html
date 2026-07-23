@@ -817,6 +817,7 @@
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 28px;
+      perspective: 1000px;
     }
 
     .project-card {
@@ -825,9 +826,7 @@
       height: 100%;
       overflow: hidden;
       position: relative;
-      /* 3D tilt perspective */
       transform-style: preserve-3d;
-      perspective: 1000px;
     }
 
     /* Custom geometric top header placeholder instead of standard stock photo */
@@ -1662,22 +1661,29 @@
     </div>
   </section>
 
-  <!-- ==========================================
+  <!--
+  <-- ==========================================
      PROJECTS SECTION
-     ========================================== */ -->
+     ========================================== */ 
   <section id="projects" class="container">
     <div class="section-header">
       <h2 class="section-title heading-lg">Featured Projects</h2>
     </div>
 
     <div class="projects-grid">
-      <!-- Project Card 1 -->
+      
+      Project Card 1 
+
       <article class="project-card glass-card" data-tilt>
-        <!-- Abstract geometric mesh wrapper -->
+        
+        Abstract geometric mesh wrapper 
+
         <div class="project-media">
           <div class="project-mesh" aria-hidden="true"></div>
           <div class="project-icon" aria-hidden="true">
-            <!-- Terminal SVG Icon -->
+            
+            Terminal SVG Icon 
+
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <polyline points="4 17 10 11 4 5"></polyline>
@@ -1700,7 +1706,9 @@
             and identify active ports/services rapidly.</p>
 
           <div class="project-links">
-            <!-- [EDIT] Add appropriate GitHub or Live links -->
+            
+            [EDIT] Add appropriate GitHub or Live links 
+
             <a href="https://github.com/placeholder" class="project-btn" target="_blank" rel="noopener noreferrer"
               aria-label="View PortScanner CLI source code on GitHub">
               <svg viewBox="0 0 24 24">
@@ -1713,12 +1721,16 @@
         </div>
       </article>
 
-      <!-- Project Card 2 -->
+      
+      Project Card 2 
+
       <article class="project-card glass-card" data-tilt>
         <div class="project-media">
           <div class="project-mesh" aria-hidden="true"></div>
           <div class="project-icon" aria-hidden="true">
-            <!-- Shield/Cybersecurity SVG Icon -->
+            
+            Shield/Cybersecurity SVG Icon
+
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -1752,12 +1764,15 @@
         </div>
       </article>
 
-      <!-- Project Card 3 -->
+      Project Card 3
+
       <article class="project-card glass-card" data-tilt>
         <div class="project-media">
           <div class="project-mesh" aria-hidden="true"></div>
           <div class="project-icon" aria-hidden="true">
-            <!-- Camera/Vision SVG Icon -->
+
+            Camera/Vision SVG Icon
+
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -1793,6 +1808,7 @@
       </article>
     </div>
   </section>
+-->
 
   <!-- ==========================================
      EXPERIENCE SECTION (FLAT EDITORIAL TIMELINE)
@@ -1966,7 +1982,8 @@
       const cursor = document.querySelector('.typing-cursor');
       const textToType = "Jayden Tan";
 
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const prefersReduced = prefersReducedMotion.matches;
       if (prefersReduced) {
         typingTarget.textContent = textToType;
         if (cursor) cursor.style.display = 'none';
@@ -2329,8 +2346,8 @@
           this.x = Math.random() * canvas.width;
           this.y = Math.random() * canvas.height;
           this.size = Math.random() * 3 + 1; // Small dust nodes
-          this.speedX = Math.random() * 0.12 - 0.06;
-          this.speedY = Math.random() * 0.12 - 0.06;
+          this.speedX = Math.random() * 0.6 - 0.3;
+          this.speedY = Math.random() * 0.6 - 0.3;
           this.alpha = Math.random() * 0.4 + 0.1;
         }
 
