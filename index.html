@@ -216,7 +216,7 @@
     }
 
     .cursor-dot.dot-fading-in {
-      transition: opacity 0.5s ease;
+      transition: opacity 0.75s ease;
     }
 
     /* Outline ring: invisible by default, only shown on hover */
@@ -2205,6 +2205,7 @@
       let mouseY = window.innerHeight / 2;
       let outlineX = mouseX;
       let outlineY = mouseY;
+      let hoverLeaveTimeout = null;
 
       const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
@@ -2220,8 +2221,8 @@
 
         // Smoothly trail the outline behind the dot
         const animateOutline = () => {
-          outlineX += (mouseX - outlineX) * 0.15;
-          outlineY += (mouseY - outlineY) * 0.15;
+          outlineX += (mouseX - outlineX) * 0.4;
+          outlineY += (mouseY - outlineY) * 0.4;
           cursorOutline.style.left = `${outlineX}px`;
           cursorOutline.style.top = `${outlineY}px`;
           requestAnimationFrame(animateOutline);
@@ -2244,10 +2245,19 @@
           }
 
           el.addEventListener('mouseenter', () => {
-            outlineX = mouseX;
-            outlineY = mouseY;
-            cursorOutline.style.left = `${outlineX}px`;
-            cursorOutline.style.top = `${outlineY}px`;
+            // Cancel any pending "leave" from the previous hover target —
+            // moving directly between two buttons should feel continuous,
+            // not shrink-then-grow
+            if (hoverLeaveTimeout) {
+              clearTimeout(hoverLeaveTimeout);
+              hoverLeaveTimeout = null;
+            }
+
+            // Already at hover size (came straight from another button) —
+            // skip replaying the expand animation, just ensure the end state holds
+            if (cursorOutline.classList.contains('cursor-hover')) {
+              return;
+            }
 
             cursorOutline.classList.remove('ring-contracting');
             cursorOutline.classList.add('cursor-hover', 'ring-expanding');
@@ -2260,22 +2270,27 @@
             });
           });
           el.addEventListener('mouseleave', () => {
-            cursorOutline.classList.remove('cursor-hover', 'ring-expanding');
-            cursorOutline.classList.add('ring-contracting');
+            // Delay the contract animation briefly — if mouseenter fires on a
+            // new hoverable element within this window, we cancel it above
+            hoverLeaveTimeout = setTimeout(() => {
+              cursorOutline.classList.remove('cursor-hover', 'ring-expanding');
+              cursorOutline.classList.add('ring-contracting');
 
-            // Apply the slow fade-in only for this reappearance, then clean up
-            cursorDot.classList.add('dot-fading-in');
-            cursorDot.classList.remove('cursor-hover');
+              cursorDot.classList.add('dot-fading-in');
+              cursorDot.classList.remove('cursor-hover');
 
-            cursorOutline.addEventListener('animationend', function handler() {
-              cursorOutline.classList.remove('ring-contracting');
-              cursorOutline.removeEventListener('animationend', handler);
-            });
+              cursorOutline.addEventListener('animationend', function handler() {
+                cursorOutline.classList.remove('ring-contracting');
+                cursorOutline.removeEventListener('animationend', handler);
+              });
 
-            cursorDot.addEventListener('transitionend', function dotHandler() {
-              cursorDot.classList.remove('dot-fading-in');
-              cursorDot.removeEventListener('transitionend', dotHandler);
-            });
+              cursorDot.addEventListener('transitionend', function dotHandler() {
+                cursorDot.classList.remove('dot-fading-in');
+                cursorDot.removeEventListener('transitionend', dotHandler);
+              });
+
+              hoverLeaveTimeout = null;
+            }, 40);
           });
         });
 
