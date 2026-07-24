@@ -4,9 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
   <title>Jayden Tan | Portfolio</title>
   <meta name="description"
-    content="Personal portfolio of Jayden Tan, a high school student specializing in computer science, cybersecurity, and back-end development.">
+    content="Personal portfolio of Jayden Tan.">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -649,6 +650,7 @@
     #contact {
       padding-top: 40px !important;
       padding-bottom: 40px !important;
+      isolation: isolate;
     }
 
     section.reveal {
@@ -701,7 +703,7 @@
       z-index: -1;
       pointer-events: none;
       filter: blur(80px);
-      animation: ambient-pulse 18s infinite alternate ease-in-out;
+      animation: ambient-pulse 10s infinite alternate ease-in-out;
     }
 
     @keyframes ambient-pulse {
@@ -888,6 +890,15 @@
     }
 
     /* Focus Area list */
+    .focus-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
     .focus-areas {
       display: flex;
       flex-wrap: wrap;
@@ -960,19 +971,24 @@
        PROJECTS SECTION
        ========================================== */
     .projects-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display: flex;
+      flex-wrap: wrap;
       gap: 28px;
+      align-items: flex-start;
       perspective: 1000px;
+      width: 100%;
     }
 
     .project-card {
       display: flex;
       flex-direction: column;
       height: 100%;
+      width: min(100%, 360px);
+      min-width: 280px;
       overflow: hidden;
       position: relative;
       transform-style: preserve-3d;
+      align-self: flex-start;
     }
 
     /* Custom geometric top header placeholder instead of standard stock photo */
@@ -1671,9 +1687,7 @@
           <li><a href="#about" class="nav-link">About</a></li>
           <li><a href="#projects" class="nav-link">Projects</a></li>
           <li><a href="#experience" class="nav-link">Experience</a></li>
-
-          <!-- [EDIT] REIMPLEMENT THIS AFTER PROJECTS ADDED -->
-          <!-- <li><a href="#contact" class="nav-link">Contact</a></li> -->
+          <li><a href="#contact" class="nav-link">Contact</a></li>
         </ul>
 
         <div class="nav-controls">
@@ -1715,12 +1729,12 @@
 
         <!-- Main introduction: Typing text handles character loading. Blinking cursor added. -->
         <h1 class="hero-title heading-xl">
-          Hi, I'm <span class="text-gradient text-glow" id="typing-text"></span><span class="typing-cursor"
+          <span class="text-gradient text-glow" id="typing-text"></span><span class="typing-cursor"
             aria-hidden="true">|</span>
         </h1>
 
         <p class="hero-tagline">
-          a high school student who likes development.
+          a current student who likes development.
         </p>
 
         <div class="hero-buttons">
@@ -1728,20 +1742,9 @@
 
           <!-- Resume download/viewer button
                [EDIT] Replace '#' with direct link to resume PDF or custom URL -->
-          <a href="#" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">View Resume</a>
+          <!-- <a href="#" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">View Resume</a> -->
 
           <a href="#contact" class="btn btn-secondary">Get In Touch</a>
-        </div>
-      </div>
-
-      <!-- Avatar container. Initial layout displays initials JT. 
-           [EDIT] To replace monogram with image, replace contents inside avatar-container -->
-      <div class="avatar-wrapper">
-        <div class="avatar-container" id="avatar-container">
-          <!-- Monogram text placeholder -->
-          <span class="avatar-fallback" id="avatar-fallback">JT</span>
-          <!-- When replacing with profile picture, remove code above and use:
-          <img class="avatar" src="me.jpg" alt="Jayden Tan Profile Picture"> -->
         </div>
       </div>
     </div>
@@ -1760,16 +1763,15 @@
       <div class="about-content">
         <p class="about-text">
           I am a high school student interested in computer science, cybersecurity, and AI. I am an adaptable
-          learner and always looking for new challenges. I enjoy working collaboratively with others and I am always
-          looking to learn more about new technologies and to develop my skills in new areas.
+          learner and enjoy working collaboratively with others. I am always looking to learn more about new 
+          technologies and to develop my skills in new areas.
         </p>
 
         <p class="about-text" style="font-size: 0.95rem;">
-          Based in <strong>New York</strong>
+          Located in <strong>New York</strong>
         </p>
 
-        <!-- Focus Areas tags -->
-        <div class="focus-areas" aria-label="Key Focus Areas">
+        <div class="focus-areas" aria-label="Interests">
           <span class="focus-pill">Computer Science</span>
           <span class="focus-pill">Cybersecurity</span>
           <span class="focus-pill">Back-end Development</span>
@@ -1777,190 +1779,80 @@
         </div>
       </div>
 
-      <!-- Skills Pills (Interactive templates grouped by categories) -->
+      <!-- Skills Pills -->
       <div class="skills-container" aria-label="Skills & Technologies">
         <h3 class="heading-sm" style="margin-bottom: 8px;">Skills</h3>
 
         <!-- Category: Languages -->
         <div class="skills-category">
-          <span class="skills-cat-title">Languages</span>
+          <span class="skills-cat-title">Programming Languages</span>
           <div class="skills-list">
             <span class="skill-pill">Python</span>
             <span class="skill-pill">Java</span>
           </div>
         </div>
 
-        <!-- Category: Web Technologies -->
-        <!-- <div class="skills-category">
-          <span class="skills-cat-title">Web Technologies</span>
-          <div class="skills-list">
-            <span class="skill-pill">Node.js</span>
-            <span class="skill-pill">Express</span>
-            <span class="skill-pill">REST APIs</span>
-            <span class="skill-pill">SQL & NoSQL</span>
-          </div>
-        </div> -->
-
         <!-- Category: Security & Tools -->
         <div class="skills-category">
-          <span class="skills-cat-title">Tools</span>
+          <span class="skills-cat-title">Other</span>
           <div class="skills-list">
-            <span class="skill-pill">Git & GitHub</span>
-            <span class="skill-pill">Linux Shell</span>
+            <span class="skill-pill">GitHub</span>
+            <span class="skill-pill">Linux</span>
+            <span class="skill-pill">CVAT</span>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!--
-  <-- ==========================================
+
+  <!-- ==========================================
      PROJECTS SECTION
-     ========================================== */ 
+     ========================================== --> 
   <section id="projects" class="container">
     <div class="section-header">
-      <h2 class="section-title heading-lg">Featured Projects</h2>
+      <h2 class="section-title heading-lg">Projects</h2>
     </div>
 
     <div class="projects-grid">
-      
-      Project Card 1 
-
       <article class="project-card glass-card" data-tilt>
-        
-        Abstract geometric mesh wrapper 
-
         <div class="project-media">
           <div class="project-mesh" aria-hidden="true"></div>
           <div class="project-icon" aria-hidden="true">
-            
-            Terminal SVG Icon 
-
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="4 17 10 11 4 5"></polyline>
-              <line x1="12" y1="19" x2="20" y2="19"></line>
-            </svg>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-icon lucide-eye">
+              <path 
+                d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
+              <circle cx="12" cy="12" r="3"/></svg>
           </div>
         </div>
-
         <div class="project-card-body">
           <div class="project-meta">
-            <span class="project-year">[EDIT] 2026</span>
+            <span class="project-year">WIP</span>
             <div class="project-tags">
               <span class="project-tag">Python</span>
-              <span class="project-tag">Socket API</span>
+              <span class="project-tag">Computer Vision</span>
             </div>
           </div>
 
-          <h3 class="heading-sm">[EDIT] PortScanner CLI</h3>
-          <p class="project-desc">[EDIT] A multi-threaded network scanner configured in Python to explore target systems
-            and identify active ports/services rapidly.</p>
+          <h3 class="heading-sm">Handball Vision</h3>
+          <p class="project-desc">A computer vision project for detecting and tracking handball players and the ball in real-time.</p>
 
           <div class="project-links">
-            
-            [EDIT] Add appropriate GitHub or Live links 
-
-            <a href="https://github.com/placeholder" class="project-btn" target="_blank" rel="noopener noreferrer"
-              aria-label="View PortScanner CLI source code on GitHub">
+            <a href="https://github.com/jayden2tan/handball-vision" class="project-btn" target="_blank" rel="noopener noreferrer"
+              aria-label="View Handball Vision source code on GitHub">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
               </svg>
-              GitHub
+              GitHub (Private)
             </a>
           </div>
         </div>
       </article>
 
-      
-      Project Card 2 
-
-      <article class="project-card glass-card" data-tilt>
-        <div class="project-media">
-          <div class="project-mesh" aria-hidden="true"></div>
-          <div class="project-icon" aria-hidden="true">
-            
-            Shield/Cybersecurity SVG Icon
-
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-          </div>
-        </div>
-
-        <div class="project-card-body">
-          <div class="project-meta">
-            <span class="project-year">[EDIT] 2025</span>
-            <div class="project-tags">
-              <span class="project-tag">Node.js</span>
-              <span class="project-tag">Cryptography</span>
-            </div>
-          </div>
-
-          <h3 class="heading-sm">[EDIT] CipherVault</h3>
-          <p class="project-desc">[EDIT] A local password encryption vaults utilizing AES-256-GCM algorithms to securely
-            store and decrypt service credentials.</p>
-
-          <div class="project-links">
-            <a href="https://github.com/placeholder" class="project-btn" target="_blank" rel="noopener noreferrer"
-              aria-label="View CipherVault source code on GitHub">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-              </svg>
-              GitHub
-            </a>
-          </div>
-        </div>
-      </article>
-
-      Project Card 3
-
-      <article class="project-card glass-card" data-tilt>
-        <div class="project-media">
-          <div class="project-mesh" aria-hidden="true"></div>
-          <div class="project-icon" aria-hidden="true">
-
-            Camera/Vision SVG Icon
-
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-              <circle cx="12" cy="13" r="4"></circle>
-            </svg>
-          </div>
-        </div>
-
-        <div class="project-card-body">
-          <div class="project-meta">
-            <span class="project-year">[EDIT] 2025</span>
-            <div class="project-tags">
-              <span class="project-tag">Python</span>
-              <span class="project-tag">OpenCV</span>
-            </div>
-          </div>
-
-          <h3 class="heading-sm">[EDIT] GesturePointer</h3>
-          <p class="project-desc">[EDIT] Computer vision script using OpenCV to track finger coordinates via webcam and
-            control local mouse pointers dynamically.</p>
-
-          <div class="project-links">
-            <a href="https://github.com/placeholder" class="project-btn" target="_blank" rel="noopener noreferrer"
-              aria-label="View GesturePointer source code on GitHub">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-              </svg>
-              GitHub
-            </a>
-          </div>
-        </div>
-      </article>
+      <!-- Additional projects can be added here. -->
     </div>
   </section>
--->
 
   <!-- ==========================================
      EXPERIENCE SECTION (FLAT EDITORIAL TIMELINE)
@@ -1985,10 +1877,10 @@
           </div>
           <p class="exp-desc">Computer Science For Cyber Security (CS4CS)</p>
           <ul>
-            <li>Competitive summer program where I gained foundational skills in Cybersecurity, Cryptography, Digital
+            <li> Competitive summer program where I gained skills in Cybersecurity, Cryptography, Digital
               Forensics, and the Linux operating system.</li>
-            <li>Acquired experience through Capture the Flag (CTF) activities.</li>
-            <li>Collaborated with peers on hands-on projects and cybersecurity challenges.</li>
+            <li> Acquired experience through Capture the Flag (CTF) activities.</li>
+            <li> Collaborated with peers on hands-on projects and cybersecurity challenges.</li>
           </ul>
         </div>
       </div>
@@ -2005,8 +1897,9 @@
             <span class="exp-date">2024 - Present</span>
           </div>
           <p class="exp-desc">
-            Academic focus in computer science and mathematics classes.
-            <br>Extracurriculars: Varsity Handball, National Science Bowl</br>
+            Specialized High School. Academic focus in computer science and mathematics classes.
+            <li> AP Computer Science Principles (5), AP World History (4)</li>
+            <li> Extracurriculars: Varsity Handball, National Science Bowl</li>
           </p>
         </div>
       </div>
@@ -2082,7 +1975,7 @@
 
             <div class="form-group">
               <label for="form-email" class="form-label">Email</label>
-              <input type="email" id="form-email" name="email" class="form-input" placeholder="email@example.com"
+              <input type="email" id="form-email" name="email" class="form-input" placeholder="name@example.com"
                 required>
               <span class="error-msg" id="email-error" role="alert"></span>
             </div>
@@ -2097,7 +1990,7 @@
           <div class="form-group">
             <label for="form-message" class="form-label">Message</label>
             <textarea id="form-message" name="message" class="form-input form-textarea"
-              placeholder="Hi Jayden, I'd like to talk about..." required></textarea>
+              placeholder="Hi Jayden, I'm reaching out to..." required></textarea>
             <span class="error-msg" id="message-error" role="alert"></span>
           </div>
 
@@ -2231,7 +2124,9 @@
 
         // Grow cursor on hoverable elements (buttons, links, pills, cards)
         // Grow cursor on hoverable elements (buttons, links, pills, cards)
-        const hoverTargets = document.querySelectorAll('a, button, .skill-pill, .focus-pill, [data-tilt]');
+        const hoverTargets = document.querySelectorAll(
+          'a:not([data-tilt] a), button:not([data-tilt] button), .skill-pill, .focus-pill, [data-tilt]'
+        );
         hoverTargets.forEach(el => {
           el.style.pointerEvents = 'auto';
 
@@ -2302,7 +2197,7 @@
           nested.addEventListener('mouseleave', (e) => e.stopPropagation());
         });
 
-        // Morph cursor into an I-beam over text inputs and textareas
+        // Morph cursor into an I-beam over text inputs and text areas
         const textTargets = document.querySelectorAll('.form-input, .form-textarea');
         textTargets.forEach(el => {
           el.addEventListener('mouseenter', () => {
@@ -2619,7 +2514,7 @@
       const ctx = canvas.getContext('2d');
 
       let particles = [];
-      const particleCount = 200; // Subtle amount to conserve CPU/battery
+      const particleCount = 250; // Subtle amount to conserve CPU/battery
 
       // Track live mouse position for particle interaction (separate from the custom cursor's own trackers)
       let particleMouseX = -9999;
@@ -2749,5 +2644,4 @@
     });
   </script>
 </body>
-
 </html>
