@@ -215,6 +215,10 @@
       transition: width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
     }
 
+    .cursor-dot.dot-fading-in {
+      transition: opacity 0.5s ease;
+    }
+
     /* Outline ring: invisible by default, only shown on hover */
     .cursor-outline {
       width: 36px;
@@ -238,16 +242,75 @@
       opacity: 1;
     }
 
+    /* Ring expand-in animation */
+    @keyframes ring-expand {
+      from {
+        width: 16px;
+        height: 16px;
+        opacity: 0;
+        border-color: rgba(var(--accent-rgb), 0.2);
+      }
+
+      to {
+        width: 56px;
+        height: 56px;
+        opacity: 1;
+        border-color: var(--accent);
+      }
+    }
+
+    /* Ring collapse-out animation */
+    @keyframes ring-contract {
+      from {
+        width: 56px;
+        height: 56px;
+        opacity: 1;
+        border-color: var(--accent);
+      }
+
+      to {
+        width: 16px;
+        height: 16px;
+        opacity: 0;
+        border-color: rgba(var(--accent-rgb), 0.2);
+      }
+    }
+
+    .cursor-outline.ring-expanding {
+      animation: ring-expand 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .cursor-outline.ring-contracting {
+      animation: ring-contract 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
     /* Text-input cursor variant: morphs the dot into a thick glowing I-beam */
     .cursor-dot.cursor-text {
       width: 4px;
-      height: 24px;
+      height: 22px;
       border-radius: 2px;
       background-color: var(--accent);
       box-shadow: 0 0 10px 3px rgba(var(--accent-rgb), 0.7),
         0 0 20px 6px rgba(var(--accent-rgb), 0.35);
-      transform: translate(-50%, -50%) scale(1);
+      transform: translate(-25%, -25%) scale(1);
       opacity: 1;
+    }
+
+    /* Blinking animation for the custom cursor's text I-beam */
+    @keyframes cursor-text-blink {
+
+      from,
+      to {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .cursor-dot.cursor-text {
+      animation: cursor-text-blink 1s infinite step-end;
     }
 
     .cursor-outline.cursor-text {
@@ -265,13 +328,8 @@
 
     /* Show real system cursor everywhere by default; hidden only once JS confirms a mouse is present */
     body.custom-cursor-active,
-    body.custom-cursor-active a,
-    body.custom-cursor-active button,
-    body.custom-cursor-active input,
-    body.custom-cursor-active textarea,
-    body.custom-cursor-active .form-input,
-    body.custom-cursor-active .form-textarea {
-      cursor: none;
+    body.custom-cursor-active * {
+      cursor: none !important;
     }
 
     /* Hide both cursor elements when the mouse leaves the browser window */
@@ -2093,14 +2151,6 @@
             charIdx++;
             setTimeout(typeChar, 100); // 100ms key delay
           } else {
-            // Stop cursor blinking and fade out cursor after typing completes
-            setTimeout(() => {
-              if (cursor) {
-                cursor.style.animation = 'none';
-                cursor.style.opacity = '0';
-                cursor.style.transition = 'opacity 0.5s ease';
-              }
-            }, 1500);
           }
         }
         setTimeout(typeChar, 500); // Delay typing on page load
@@ -2182,29 +2232,59 @@
         // Grow cursor on hoverable elements (buttons, links, pills, cards)
         const hoverTargets = document.querySelectorAll('a, button, .skill-pill, .focus-pill, [data-tilt]');
         hoverTargets.forEach(el => {
-          // Make sure clicks/hovers on icons or text inside the element
-          // don't cause the parent's mouseenter/mouseleave to refire
           el.style.pointerEvents = 'auto';
-          Array.from(el.children).forEach(child => {
-            child.style.pointerEvents = 'none';
-          });
+
+          // Only flatten child hit-testing for elements with no independently
+          // clickable descendants. Project cards ([data-tilt]) contain a nested
+          // GitHub link, so skip them here — those get handled separately below.
+          if (!el.hasAttribute('data-tilt')) {
+            Array.from(el.children).forEach(child => {
+              child.style.pointerEvents = 'none';
+            });
+          }
 
           el.addEventListener('mouseenter', () => {
-            // Snap the trailing outline to the current position instantly,
-            // instead of letting it ease in from wherever it lagged behind —
-            // this eliminates the "teleport" look when entering fast
             outlineX = mouseX;
             outlineY = mouseY;
             cursorOutline.style.left = `${outlineX}px`;
             cursorOutline.style.top = `${outlineY}px`;
 
-            cursorOutline.classList.add('cursor-hover');
+            cursorOutline.classList.remove('ring-contracting');
+            cursorOutline.classList.add('cursor-hover', 'ring-expanding');
+            cursorDot.classList.remove('dot-fading-in');
             cursorDot.classList.add('cursor-hover');
+
+            cursorOutline.addEventListener('animationend', function handler() {
+              cursorOutline.classList.remove('ring-expanding');
+              cursorOutline.removeEventListener('animationend', handler);
+            });
           });
           el.addEventListener('mouseleave', () => {
-            cursorOutline.classList.remove('cursor-hover');
+            cursorOutline.classList.remove('cursor-hover', 'ring-expanding');
+            cursorOutline.classList.add('ring-contracting');
+
+            // Apply the slow fade-in only for this reappearance, then clean up
+            cursorDot.classList.add('dot-fading-in');
             cursorDot.classList.remove('cursor-hover');
+
+            cursorOutline.addEventListener('animationend', function handler() {
+              cursorOutline.classList.remove('ring-contracting');
+              cursorOutline.removeEventListener('animationend', handler);
+            });
+
+            cursorDot.addEventListener('transitionend', function dotHandler() {
+              cursorDot.classList.remove('dot-fading-in');
+              cursorDot.removeEventListener('transitionend', dotHandler);
+            });
           });
+        });
+
+        // For [data-tilt] cards specifically: keep nested links/buttons fully
+        // clickable, but stop them from individually re-triggering the card's
+        // own mouseenter/mouseleave (which is what caused the original glitch)
+        document.querySelectorAll('[data-tilt] a, [data-tilt] button').forEach(nested => {
+          nested.addEventListener('mouseenter', (e) => e.stopPropagation());
+          nested.addEventListener('mouseleave', (e) => e.stopPropagation());
         });
 
         // Morph cursor into an I-beam over text inputs and textareas
