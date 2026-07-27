@@ -15,6 +15,11 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
         rel="stylesheet">
 
+    <!-- PDF.js — used to render the resume ourselves instead of the browser's
+       native PDF viewer, so it matches the site's look and has no browser
+       chrome (toolbar, page controls, etc. baked in by the OS/browser). -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <style>
         /* ==========================================
        DESIGN SYSTEM & CSS VARIABLES (matches portfolio)
@@ -30,6 +35,7 @@
 
             --transition-fast: 200ms cubic-bezier(0.16, 1, 0.3, 1);
             --transition-normal: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+            --transition-slow: 500ms cubic-bezier(0.16, 1, 0.3, 1);
 
             --accent: #2563eb;
             --accent-rgb: 37, 99, 235;
@@ -101,6 +107,8 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
         }
 
         body::before {
@@ -111,6 +119,24 @@
             background: radial-gradient(circle at 10% 20%, rgba(var(--accent-rgb), 0.04) 0%, transparent 45%),
                 radial-gradient(circle at 90% 80%, rgba(var(--accent-rgb), 0.03) 0%, transparent 45%);
             pointer-events: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-full);
+            border: 2px solid var(--bg-base);
+        }
+
+        [data-theme="light"] ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
         }
 
         .container {
@@ -127,6 +153,115 @@
             font-weight: 700;
             letter-spacing: -0.02em;
             color: var(--text-primary);
+        }
+
+        /* Background Canvas (same particle field as the main page) */
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Custom Cursor */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+
+        .cursor-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            box-shadow: 0 0 12px 4px rgba(var(--accent-rgb), 0.6),
+                0 0 24px 8px rgba(var(--accent-rgb), 0.3);
+            opacity: 1;
+            transition: width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+        }
+
+        .cursor-dot.dot-fading-in {
+            transition: opacity 0.75s ease;
+        }
+
+        .cursor-outline {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(var(--accent-rgb), 0.5);
+            background-color: transparent;
+            opacity: 0;
+            transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+        }
+
+        .cursor-dot.cursor-hover {
+            opacity: 0;
+        }
+
+        .cursor-outline.cursor-hover {
+            width: 56px;
+            height: 56px;
+            border-color: var(--accent);
+            opacity: 1;
+        }
+
+        @keyframes ring-expand {
+            from {
+                width: 16px;
+                height: 16px;
+                opacity: 0;
+                border-color: rgba(var(--accent-rgb), 0.2);
+            }
+
+            to {
+                width: 56px;
+                height: 56px;
+                opacity: 1;
+                border-color: var(--accent);
+            }
+        }
+
+        @keyframes ring-contract {
+            from {
+                width: 56px;
+                height: 56px;
+                opacity: 1;
+                border-color: var(--accent);
+            }
+
+            to {
+                width: 16px;
+                height: 16px;
+                opacity: 0;
+                border-color: rgba(var(--accent-rgb), 0.2);
+            }
+        }
+
+        .cursor-outline.ring-expanding {
+            animation: ring-expand 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .cursor-outline.ring-contracting {
+            animation: ring-contract 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+        }
+
+        body.custom-cursor-active,
+        body.custom-cursor-active * {
+            cursor: none !important;
+        }
+
+        body.cursor-window-hidden .cursor-dot,
+        body.cursor-window-hidden .cursor-outline {
+            opacity: 0 !important;
         }
 
         /* ==========================================
@@ -210,6 +345,20 @@
         main {
             flex: 1;
             padding: 56px 0 96px;
+            position: relative;
+        }
+
+        .resume-hero-glow {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(320px, 60vw, 620px);
+            height: 320px;
+            background: radial-gradient(circle, rgba(var(--accent-rgb), 0.16) 0%, rgba(139, 92, 246, 0.10) 40%, transparent 70%);
+            filter: blur(70px);
+            z-index: -1;
+            pointer-events: none;
         }
 
         .resume-header {
@@ -219,6 +368,16 @@
             flex-wrap: wrap;
             gap: 20px;
             margin-bottom: 32px;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
+        }
+
+        @keyframes fade-up {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .resume-title {
@@ -229,6 +388,12 @@
             color: var(--text-secondary);
             margin-top: 6px;
             font-size: 1rem;
+        }
+
+        .resume-header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -259,6 +424,18 @@
             transform: translateY(-2px);
         }
 
+        .btn-secondary {
+            background-color: transparent;
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-surface-hover);
+            border-color: var(--border-color-hover);
+            transform: translateY(-2px);
+        }
+
         .btn svg {
             width: 18px;
             height: 18px;
@@ -267,28 +444,185 @@
             stroke-width: 2;
         }
 
-        /* PDF viewer frame */
-        .resume-viewer {
+        /* ==========================================
+       CUSTOM PDF RENDERER
+       ========================================== */
+        .pdf-shell {
             background: var(--bg-surface);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
-            overflow: hidden;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(24px);
+            animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.18s forwards;
         }
 
-        .resume-viewer iframe {
-            width: 100%;
-            height: 80vh;
-            min-height: 500px;
-            border: none;
-            display: block;
+        /* Floating toolbar */
+        .pdf-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border-color);
             background: var(--bg-surface-opaque);
+            flex-wrap: wrap;
         }
 
-        /* Fallback shown if the PDF can't be embedded/found */
-        .viewer-fallback {
+        .pdf-toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pdf-tool-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: border-color var(--transition-fast), background-color var(--transition-fast), opacity var(--transition-fast);
+        }
+
+        .pdf-tool-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            background-color: var(--bg-surface-hover);
+        }
+
+        .pdf-tool-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
+
+        .pdf-tool-btn svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        .pdf-zoom-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 42px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pdf-page-indicator {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pdf-page-indicator strong {
+            color: var(--text-primary);
+        }
+
+        /* Scrollable page stage */
+        .pdf-stage {
+            /* Use an explicit height (not max-height) so the scrollable box is
+         always bounded, and block layout instead of flex — a flex
+         container with align-items:center + overflow:auto has a
+         well-known bug where part of the overflowing content becomes
+         permanently unreachable by scrolling. Block + margin:auto avoids
+         that entirely while still centering each page horizontally. */
+            height: min(78vh, 900px);
+            overflow-y: auto;
+            overflow-x: auto;
+            background: repeating-linear-gradient(45deg,
+                    rgba(128, 128, 128, 0.03),
+                    rgba(128, 128, 128, 0.03) 10px,
+                    transparent 10px,
+                    transparent 20px);
+            padding: 32px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .pdf-page-wrap {
+            position: relative;
+            box-shadow: var(--shadow-lg);
+            background: #fff;
+            border-radius: 4px;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(14px) scale(0.985);
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            /* Centers each page horizontally within the scrollable stage,
+         without relying on flexbox align-items */
+            margin: 0 auto 24px auto;
+            width: fit-content;
+        }
+
+        .pdf-page-wrap:last-child {
+            margin-bottom: 0;
+        }
+
+        .pdf-page-wrap.page-visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .pdf-page-wrap canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .pdf-page-number-tag {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            pointer-events: none;
+        }
+
+        /* Loading state */
+        .pdf-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 100px 24px;
+            color: var(--text-secondary);
+        }
+
+        .pdf-spinner {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Fallback if the PDF fails entirely */
+        .pdf-error {
             display: none;
             flex-direction: column;
             align-items: center;
@@ -299,7 +633,7 @@
             color: var(--text-secondary);
         }
 
-        .viewer-fallback svg {
+        .pdf-error svg {
             width: 48px;
             height: 48px;
             stroke: var(--accent);
@@ -307,11 +641,12 @@
             stroke-width: 1.5;
         }
 
-        .resume-viewer.no-pdf iframe {
+        .pdf-shell.pdf-failed .pdf-toolbar,
+        .pdf-shell.pdf-failed .pdf-stage {
             display: none;
         }
 
-        .resume-viewer.no-pdf .viewer-fallback {
+        .pdf-shell.pdf-failed .pdf-error {
             display: flex;
         }
 
@@ -321,18 +656,103 @@
                 align-items: flex-start;
             }
 
-            .btn {
+            .resume-header-actions {
                 width: 100%;
             }
 
-            .resume-viewer iframe {
-                height: 65vh;
+            .resume-header-actions .btn {
+                flex: 1;
+            }
+
+            .pdf-toolbar {
+                justify-content: center;
+            }
+
+            .pdf-stage {
+                padding: 20px 12px;
+                height: min(70vh, 700px);
+            }
+        }
+
+        /* Back to Top */
+        .back-to-top-btn {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-full);
+            background: var(--bg-surface-opaque);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity var(--transition-normal),
+                transform var(--transition-normal),
+                border-color var(--transition-fast),
+                color var(--transition-fast);
+            z-index: 99;
+        }
+
+        .back-to-top-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .back-to-top-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .back-to-top-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+
+            .cursor-dot,
+            .cursor-outline {
+                display: none !important;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .resume-header,
+            .pdf-shell,
+            .pdf-page-wrap,
+            .btn,
+            .theme-toggle-btn,
+            .back-to-top-btn {
+                transition: none !important;
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
             }
         }
     </style>
 </head>
 
 <body>
+
+    <!-- Animated Particle Canvas -->
+    <canvas id="background-canvas"></canvas>
+
+    <!-- Custom Cursor Elements -->
+    <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+    <div class="cursor-outline" id="cursor-outline" aria-hidden="true"></div>
 
     <header class="header-nav" role="banner">
         <div class="container nav-container">
@@ -373,29 +793,77 @@
 
     <main>
         <div class="container">
+            <div class="resume-hero-glow" aria-hidden="true"></div>
+
             <div class="resume-header">
                 <div>
                     <h1 class="resume-title">Resume</h1>
                     <p class="resume-subtitle">View or download my resume below.</p>
                 </div>
 
-                <!-- Download button: points at the same PDF shown in the viewer -->
-                <a href="files/Jayden_Tan_Resume.pdf" class="btn btn-primary" download="Jayden-Tan-Resume.pdf"
-                    id="download-resume-btn">
-                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    Download Resume
-                </a>
+                <div class="resume-header-actions">
+                    <a href="files/Jayden_Tan_Resume.pdf" class="btn btn-secondary" target="_blank"
+                        rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        Open Raw PDF
+                    </a>
+                    <a href="files/Jayden_Tan_Resume.pdf" class="btn btn-primary" download="Jayden-Tan-Resume.pdf"
+                        id="download-resume-btn">
+                        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download
+                    </a>
+                </div>
             </div>
 
-            <!-- Embedded PDF viewer. Change the src/href above and below to your resume's filename. -->
-            <div class="resume-viewer" id="resume-viewer">
-                <iframe id="resume-iframe" src="files/Jayden_Tan_Resume.pdf" title="Jayden Tan Resume PDF"></iframe>
+            <!-- Custom PDF renderer shell -->
+            <div class="pdf-shell" id="pdf-shell">
+                <div class="pdf-toolbar">
+                    <div class="pdf-toolbar-group">
+                        <button class="pdf-tool-btn" id="zoom-out-btn" aria-label="Zoom out">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                        </button>
+                        <span class="pdf-zoom-label" id="zoom-label">100%</span>
+                        <button class="pdf-tool-btn" id="zoom-in-btn" aria-label="Zoom in">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="11" y1="8" x2="11" y2="14"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                        </button>
+                        <button class="pdf-tool-btn" id="zoom-reset-btn" aria-label="Reset zoom">
+                            <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <polyline points="3 3 3 8 8 8"></polyline>
+                            </svg>
+                        </button>
+                    </div>
 
-                <div class="viewer-fallback">
+                    <div class="pdf-page-indicator" id="page-indicator">
+                        Page <strong id="current-page-num">1</strong> of <strong id="total-page-num">–</strong>
+                    </div>
+                </div>
+
+                <div class="pdf-stage" id="pdf-stage">
+                    <div class="pdf-loading" id="pdf-loading">
+                        <div class="pdf-spinner" aria-hidden="true"></div>
+                        <span>Loading resume…</span>
+                    </div>
+                </div>
+
+                <div class="pdf-error">
                     <svg viewBox="0 0 24 24">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
@@ -406,90 +874,398 @@
         </div>
     </main>
 
+    <button class="back-to-top-btn" id="back-to-top" aria-label="Scroll back to top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
     <script>
-        // Theme management (shared behavior/keys with the main portfolio page)
-        const themeToggleBtn = document.querySelector('.theme-toggle-btn');
-        const sunIcon = document.querySelector('.sun-icon');
-        const moonIcon = document.querySelector('.moon-icon');
+        document.addEventListener('DOMContentLoaded', () => {
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        const getPreferredTheme = () => {
-            const storedTheme = localStorage.getItem('portfolio-theme');
-            if (storedTheme) return storedTheme;
-            return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-        };
+            // ==========================================
+            // THEME MANAGEMENT (shared key with main portfolio page)
+            // ==========================================
+            const themeToggleBtn = document.querySelector('.theme-toggle-btn');
+            const sunIcon = document.querySelector('.sun-icon');
+            const moonIcon = document.querySelector('.moon-icon');
 
-        const setTheme = (theme) => {
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('portfolio-theme', theme);
-            if (theme === 'light') {
-                sunIcon.style.display = 'none';
-                moonIcon.style.display = 'block';
-            } else {
-                sunIcon.style.display = 'block';
-                moonIcon.style.display = 'none';
-            }
-        };
+            const getPreferredTheme = () => {
+                const storedTheme = localStorage.getItem('portfolio-theme');
+                if (storedTheme) return storedTheme;
+                return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            };
 
-        themeToggleBtn.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            setTheme(currentTheme === 'light' ? 'dark' : 'light');
-        });
-
-        setTheme(getPreferredTheme());
-
-        // ==========================================
-        // PDF LOAD DETECTION
-        // ==========================================
-        // NOTE: We intentionally do NOT use fetch() here. A fetch() HEAD
-        // request to a local file fails under the file:// protocol in most
-        // browsers (blocked by CORS) even when the PDF exists and the iframe
-        // itself can render it fine. That mismatch was causing the fallback
-        // message to show incorrectly. Instead we rely on the iframe's own
-        // load/error behavior, which works whether the page is opened
-        // directly (file://) or served over http(s)://.
-        const viewer = document.getElementById('resume-viewer');
-        const iframe = document.getElementById('resume-iframe');
-
-        let resolved = false;
-
-        const markMissing = () => {
-            if (resolved) return;
-            resolved = true;
-            viewer.classList.add('no-pdf');
-        };
-
-        const markLoaded = () => {
-            resolved = true;
-            viewer.classList.remove('no-pdf');
-        };
-
-        iframe.addEventListener('load', () => {
-            // Some browsers still fire 'load' for a failed/blocked PDF request
-            // (e.g. a 404 page or an about:blank swap), so double check that
-            // the frame actually reached the PDF rather than an error page.
-            try {
-                const loadedUrl = iframe.contentWindow && iframe.contentWindow.location
-                    ? iframe.contentWindow.location.href
-                    : iframe.src;
-                if (loadedUrl && loadedUrl.indexOf('.pdf') === -1 && loadedUrl !== iframe.src) {
-                    markMissing();
-                    return;
+            const setTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('portfolio-theme', theme);
+                if (theme === 'light') {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                } else {
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
                 }
-            } catch (e) {
-                // Cross-origin or sandboxed access — assume success, the
-                // browser already rendered something in the frame.
+            };
+
+            themeToggleBtn.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                setTheme(currentTheme === 'light' ? 'dark' : 'light');
+            });
+
+            setTheme(getPreferredTheme());
+
+            // ==========================================
+            // CUSTOM CURSOR (identical behavior to the main portfolio page —
+            // reacts to real mousemove, cleanly toggles on touchstart, and can
+            // freely switch back and forth between mouse and touch input)
+            // ==========================================
+            const cursorDot = document.getElementById('cursor-dot');
+            const cursorOutline = document.getElementById('cursor-outline');
+
+            let mouseX = window.innerWidth / 2;
+            let mouseY = window.innerHeight / 2;
+            let outlineX = mouseX;
+            let outlineY = mouseY;
+            let hoverLeaveTimeout = null;
+
+            let listenersBound = false;
+            let outlineLoopRunning = false;
+            let cursorVisible = false;
+
+            const bindCustomCursorListeners = () => {
+                if (listenersBound) return;
+                listenersBound = true;
+
+                const hoverTargets = document.querySelectorAll('a, button, .pdf-page-wrap');
+                hoverTargets.forEach(el => {
+                    el.addEventListener('mouseenter', () => {
+                        if (!cursorVisible) return;
+                        if (hoverLeaveTimeout) {
+                            clearTimeout(hoverLeaveTimeout);
+                            hoverLeaveTimeout = null;
+                        }
+                        if (cursorOutline.classList.contains('cursor-hover')) return;
+
+                        cursorOutline.classList.remove('ring-contracting');
+                        cursorOutline.classList.add('cursor-hover', 'ring-expanding');
+                        cursorDot.classList.remove('dot-fading-in');
+                        cursorDot.classList.add('cursor-hover');
+
+                        cursorOutline.addEventListener('animationend', function handler() {
+                            cursorOutline.classList.remove('ring-expanding');
+                            cursorOutline.removeEventListener('animationend', handler);
+                        });
+                    });
+                    el.addEventListener('mouseleave', () => {
+                        if (!cursorVisible) return;
+                        hoverLeaveTimeout = setTimeout(() => {
+                            cursorOutline.classList.remove('cursor-hover', 'ring-expanding');
+                            cursorOutline.classList.add('ring-contracting');
+                            cursorDot.classList.add('dot-fading-in');
+                            cursorDot.classList.remove('cursor-hover');
+
+                            cursorOutline.addEventListener('animationend', function handler() {
+                                cursorOutline.classList.remove('ring-contracting');
+                                cursorOutline.removeEventListener('animationend', handler);
+                            });
+                            cursorDot.addEventListener('transitionend', function dotHandler() {
+                                cursorDot.classList.remove('dot-fading-in');
+                                cursorDot.removeEventListener('transitionend', dotHandler);
+                            });
+                            hoverLeaveTimeout = null;
+                        }, 40);
+                    });
+                });
+
+                document.addEventListener('mouseleave', () => {
+                    if (cursorVisible) document.body.classList.add('cursor-window-hidden');
+                });
+                document.addEventListener('mouseenter', () => {
+                    document.body.classList.remove('cursor-window-hidden');
+                });
+            };
+
+            const startOutlineLoop = () => {
+                if (outlineLoopRunning) return;
+                outlineLoopRunning = true;
+                const animateOutline = () => {
+                    outlineX += (mouseX - outlineX) * 0.4;
+                    outlineY += (mouseY - outlineY) * 0.4;
+                    cursorOutline.style.left = `${outlineX}px`;
+                    cursorOutline.style.top = `${outlineY}px`;
+                    requestAnimationFrame(animateOutline);
+                };
+                animateOutline();
+            };
+
+            const showCursor = () => {
+                bindCustomCursorListeners();
+                startOutlineLoop();
+                if (cursorVisible) return;
+                cursorVisible = true;
+
+                cursorDot.style.display = 'block';
+                cursorOutline.style.display = 'block';
+                document.body.classList.add('custom-cursor-active');
+            };
+
+            const hideCursor = () => {
+                if (!cursorVisible) return;
+                cursorVisible = false;
+
+                document.body.classList.remove('custom-cursor-active');
+                cursorDot.style.display = 'none';
+                cursorOutline.style.display = 'none';
+
+                cursorDot.classList.remove('cursor-hover', 'dot-fading-in');
+                cursorOutline.classList.remove('cursor-hover', 'ring-expanding', 'ring-contracting');
+            };
+
+            window.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                cursorDot.style.left = `${mouseX}px`;
+                cursorDot.style.top = `${mouseY}px`;
+                showCursor();
+            }, { passive: true });
+
+            window.addEventListener('touchstart', () => {
+                hideCursor();
+            }, { passive: true });
+
+            // ==========================================
+            // BACKGROUND DUST PARTICLES (same system as the main page)
+            // ==========================================
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let particles = [];
+            const particleCount = 150;
+
+            let particleMouseX = -9999;
+            let particleMouseY = -9999;
+            const repulsionRadius = 120;
+            const repulsionStrength = 1.8;
+
+            window.addEventListener('mousemove', (e) => {
+                particleMouseX = e.clientX;
+                particleMouseY = e.clientY;
+            });
+            window.addEventListener('mouseleave', () => {
+                particleMouseX = -9999;
+                particleMouseY = -9999;
+            });
+
+            const resizeCanvas = () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            };
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 3 + 1;
+                    this.baseSpeedX = Math.random() * 0.8 - 0.4;
+                    this.baseSpeedY = Math.random() * 0.8 - 0.4;
+                    this.alpha = Math.random() * 0.4 + 0.1;
+                }
+                update() {
+                    let vx = this.baseSpeedX;
+                    let vy = this.baseSpeedY;
+                    const dx = this.x - particleMouseX;
+                    const dy = this.y - particleMouseY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < repulsionRadius) {
+                        const force = (1 - dist / repulsionRadius) * repulsionStrength;
+                        const angle = Math.atan2(dy, dx);
+                        vx += Math.cos(angle) * force;
+                        vy += Math.sin(angle) * force;
+                    }
+                    this.x += vx;
+                    this.y += vy;
+                    if (this.x < 0) this.x = canvas.width;
+                    if (this.x > canvas.width) this.x = 0;
+                    if (this.y < 0) this.y = canvas.height;
+                    if (this.y > canvas.height) this.y = 0;
+                }
+                draw() {
+                    const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+                    const colorString = theme === 'dark' ? '255, 255, 255' : '0, 0, 0';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${colorString}, ${this.alpha})`;
+                    ctx.fill();
+                }
             }
-            markLoaded();
+
+            const initParticles = () => {
+                particles = [];
+                for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+            };
+            initParticles();
+
+            let animationFrameId;
+            const animateParticles = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                animationFrameId = requestAnimationFrame(animateParticles);
+            };
+
+            if (!prefersReducedMotion.matches) animateParticles();
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    cancelAnimationFrame(animationFrameId);
+                } else if (!prefersReducedMotion.matches) {
+                    animateParticles();
+                }
+            });
+
+            prefersReducedMotion.addEventListener('change', (e) => {
+                if (e.matches) {
+                    cancelAnimationFrame(animationFrameId);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                } else {
+                    initParticles();
+                    animateParticles();
+                }
+            });
+
+            // ==========================================
+            // BACK TO TOP BUTTON
+            // ==========================================
+            const backToTopBtn = document.getElementById('back-to-top');
+            window.addEventListener('scroll', () => {
+                backToTopBtn.classList.toggle('visible', window.pageYOffset > 400);
+            });
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'auto' });
+            });
+
+            // ==========================================
+            // CUSTOM PDF RENDERER
+            // ==========================================
+            const PDF_PATH = 'files/Jayden_Tan_Resume.pdf';
+
+            const pdfShell = document.getElementById('pdf-shell');
+            const pdfStage = document.getElementById('pdf-stage');
+            const pdfLoading = document.getElementById('pdf-loading');
+            const zoomInBtn = document.getElementById('zoom-in-btn');
+            const zoomOutBtn = document.getElementById('zoom-out-btn');
+            const zoomResetBtn = document.getElementById('zoom-reset-btn');
+            const zoomLabel = document.getElementById('zoom-label');
+            const currentPageNumEl = document.getElementById('current-page-num');
+            const totalPageNumEl = document.getElementById('total-page-num');
+
+            let pdfDoc = null;
+            let currentScale = 1.0;
+            const MIN_SCALE = 0.5;
+            const MAX_SCALE = 2.5;
+            const BASE_FIT_WIDTH = 780; // reference width pages render at before zoom
+
+            const updateZoomLabel = () => {
+                zoomLabel.textContent = `${Math.round(currentScale * 100)}%`;
+                zoomOutBtn.disabled = currentScale <= MIN_SCALE;
+                zoomInBtn.disabled = currentScale >= MAX_SCALE;
+            };
+
+            const renderAllPages = async () => {
+                if (!pdfDoc) return;
+
+                pdfStage.innerHTML = '';
+                const dpr = window.devicePixelRatio || 1;
+                const pageObserverTargets = [];
+
+                for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const baseViewport = page.getViewport({ scale: 1 });
+                    const fitScale = (BASE_FIT_WIDTH / baseViewport.width) * currentScale;
+                    const viewport = page.getViewport({ scale: fitScale * dpr });
+
+                    const wrap = document.createElement('div');
+                    wrap.className = 'pdf-page-wrap';
+                    wrap.dataset.page = pageNum;
+
+                    const canvasEl = document.createElement('canvas');
+                    canvasEl.width = viewport.width;
+                    canvasEl.height = viewport.height;
+                    canvasEl.style.width = `${viewport.width / dpr}px`;
+                    canvasEl.style.height = `${viewport.height / dpr}px`;
+
+                    const tag = document.createElement('span');
+                    tag.className = 'pdf-page-number-tag';
+                    tag.textContent = `${pageNum} / ${pdfDoc.numPages}`;
+
+                    wrap.appendChild(canvasEl);
+                    wrap.appendChild(tag);
+                    pdfStage.appendChild(wrap);
+                    pageObserverTargets.push(wrap);
+
+                    const renderContext = {
+                        canvasContext: canvasEl.getContext('2d'),
+                        viewport: viewport
+                    };
+                    await page.render(renderContext).promise;
+
+                    // Fade this page in once it's actually drawn
+                    requestAnimationFrame(() => wrap.classList.add('page-visible'));
+                }
+
+                totalPageNumEl.textContent = pdfDoc.numPages;
+
+                // Track which page is centered in view for the page indicator
+                const pageSpyObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+                            currentPageNumEl.textContent = entry.target.dataset.page;
+                        }
+                    });
+                }, { root: pdfStage, threshold: [0.5] });
+
+                pageObserverTargets.forEach(el => pageSpyObserver.observe(el));
+            };
+
+            const loadPdf = async () => {
+                try {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc =
+                        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+                    const loadingTask = pdfjsLib.getDocument(PDF_PATH);
+                    pdfDoc = await loadingTask.promise;
+
+                    pdfLoading.remove();
+                    updateZoomLabel();
+                    await renderAllPages();
+                } catch (err) {
+                    console.error('Resume PDF failed to load:', err);
+                    pdfShell.classList.add('pdf-failed');
+                }
+            };
+
+            zoomInBtn.addEventListener('click', () => {
+                currentScale = Math.min(MAX_SCALE, +(currentScale + 0.15).toFixed(2));
+                updateZoomLabel();
+                renderAllPages();
+            });
+            zoomOutBtn.addEventListener('click', () => {
+                currentScale = Math.max(MIN_SCALE, +(currentScale - 0.15).toFixed(2));
+                updateZoomLabel();
+                renderAllPages();
+            });
+            zoomResetBtn.addEventListener('click', () => {
+                currentScale = 1.0;
+                updateZoomLabel();
+                renderAllPages();
+            });
+
+            loadPdf();
         });
-
-        iframe.addEventListener('error', markMissing);
-
-        // Fallback safety net: if neither load nor error fires within a few
-        // seconds (can happen with some local PDF viewer plugins), assume it
-        // loaded rather than leaving the user on a blank frame.
-        setTimeout(() => {
-            if (!resolved) markLoaded();
-        }, 4000);
     </script>
 </body>
 
