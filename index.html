@@ -702,7 +702,7 @@
       z-index: -1;
       pointer-events: none;
       filter: blur(80px);
-      animation: ambient-pulse 10s infinite alternate ease-in-out;
+      animation: ambient-pulse 18s infinite alternate ease-in-out;
     }
 
     @keyframes ambient-pulse {
@@ -2098,39 +2098,19 @@
       let outlineY = mouseY;
       let hoverLeaveTimeout = null;
 
-      const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      let listenersBound = false;   // one-time setup, never re-runs
+      let outlineLoopRunning = false; // the rAF trail-follow loop, runs once
+      let cursorVisible = false;      // current show/hide state — toggles freely
 
-      if (!isTouchDevice) {
-        document.body.classList.add('custom-cursor-active');
+      const bindCustomCursorListeners = () => {
+        if (listenersBound) return;
+        listenersBound = true;
 
-        window.addEventListener('mousemove', (e) => {
-          mouseX = e.clientX;
-          mouseY = e.clientY;
-          cursorDot.style.left = `${mouseX}px`;
-          cursorDot.style.top = `${mouseY}px`;
-        });
-
-        // Smoothly trail the outline behind the dot
-        const animateOutline = () => {
-          outlineX += (mouseX - outlineX) * 0.4;
-          outlineY += (mouseY - outlineY) * 0.4;
-          cursorOutline.style.left = `${outlineX}px`;
-          cursorOutline.style.top = `${outlineY}px`;
-          requestAnimationFrame(animateOutline);
-        };
-        animateOutline();
-
-        // Grow cursor on hoverable elements (buttons, links, pills, cards)
-        // Grow cursor on hoverable elements (buttons, links, pills, cards)
         const hoverTargets = document.querySelectorAll(
           'a:not([data-tilt] a), button:not([data-tilt] button), .skill-pill, .focus-pill, [data-tilt]'
         );
         hoverTargets.forEach(el => {
           el.style.pointerEvents = 'auto';
-
-          // Only flatten child hit-testing for elements with no independently
-          // clickable descendants. Project cards ([data-tilt]) contain a nested
-          // GitHub link, so skip them here — those get handled separately below.
           if (!el.hasAttribute('data-tilt')) {
             Array.from(el.children).forEach(child => {
               child.style.pointerEvents = 'none';
@@ -2138,19 +2118,12 @@
           }
 
           el.addEventListener('mouseenter', () => {
-            // Cancel any pending "leave" from the previous hover target —
-            // moving directly between two buttons should feel continuous,
-            // not shrink-then-grow
+            if (!cursorVisible) return;
             if (hoverLeaveTimeout) {
               clearTimeout(hoverLeaveTimeout);
               hoverLeaveTimeout = null;
             }
-
-            // Already at hover size (came straight from another button) —
-            // skip replaying the expand animation, just ensure the end state holds
-            if (cursorOutline.classList.contains('cursor-hover')) {
-              return;
-            }
+            if (cursorOutline.classList.contains('cursor-hover')) return;
 
             cursorOutline.classList.remove('ring-contracting');
             cursorOutline.classList.add('cursor-hover', 'ring-expanding');
@@ -2163,12 +2136,10 @@
             });
           });
           el.addEventListener('mouseleave', () => {
-            // Delay the contract animation briefly — if mouseenter fires on a
-            // new hoverable element within this window, we cancel it above
+            if (!cursorVisible) return;
             hoverLeaveTimeout = setTimeout(() => {
               cursorOutline.classList.remove('cursor-hover', 'ring-expanding');
               cursorOutline.classList.add('ring-contracting');
-
               cursorDot.classList.add('dot-fading-in');
               cursorDot.classList.remove('cursor-hover');
 
@@ -2176,29 +2147,24 @@
                 cursorOutline.classList.remove('ring-contracting');
                 cursorOutline.removeEventListener('animationend', handler);
               });
-
               cursorDot.addEventListener('transitionend', function dotHandler() {
                 cursorDot.classList.remove('dot-fading-in');
                 cursorDot.removeEventListener('transitionend', dotHandler);
               });
-
               hoverLeaveTimeout = null;
             }, 40);
           });
         });
 
-        // For [data-tilt] cards specifically: keep nested links/buttons fully
-        // clickable, but stop them from individually re-triggering the card's
-        // own mouseenter/mouseleave (which is what caused the original glitch)
         document.querySelectorAll('[data-tilt] a, [data-tilt] button').forEach(nested => {
           nested.addEventListener('mouseenter', (e) => e.stopPropagation());
           nested.addEventListener('mouseleave', (e) => e.stopPropagation());
         });
 
-        // Morph cursor into an I-beam over text inputs and text areas
         const textTargets = document.querySelectorAll('.form-input, .form-textarea');
         textTargets.forEach(el => {
           el.addEventListener('mouseenter', () => {
+            if (!cursorVisible) return;
             cursorDot.classList.add('cursor-text');
             cursorOutline.classList.add('cursor-text');
           });
@@ -2206,9 +2172,8 @@
             cursorDot.classList.remove('cursor-text');
             cursorOutline.classList.remove('cursor-text');
           });
-          // Keep I-beam shown while actively typing/focused, even if the mouse
-          // moves off the field slightly (e.g. dragging a selection)
           el.addEventListener('focus', () => {
+            if (!cursorVisible) return;
             cursorDot.classList.add('cursor-text');
             cursorOutline.classList.add('cursor-text');
           });
@@ -2218,14 +2183,67 @@
           });
         });
 
-        // Hide cursor visuals when mouse leaves the window
         document.addEventListener('mouseleave', () => {
-          document.body.classList.add('cursor-window-hidden');
+          if (cursorVisible) document.body.classList.add('cursor-window-hidden');
         });
         document.addEventListener('mouseenter', () => {
           document.body.classList.remove('cursor-window-hidden');
         });
-      }
+      };
+
+      const startOutlineLoop = () => {
+        if (outlineLoopRunning) return;
+        outlineLoopRunning = true;
+        const animateOutline = () => {
+          outlineX += (mouseX - outlineX) * 0.4;
+          outlineY += (mouseY - outlineY) * 0.4;
+          cursorOutline.style.left = `${outlineX}px`;
+          cursorOutline.style.top = `${outlineY}px`;
+          requestAnimationFrame(animateOutline);
+        };
+        animateOutline();
+      };
+
+      const showCursor = () => {
+        bindCustomCursorListeners();
+        startOutlineLoop();
+        if (cursorVisible) return;
+        cursorVisible = true;
+
+        cursorDot.style.display = 'block';
+        cursorOutline.style.display = 'block';
+        document.body.classList.add('custom-cursor-active');
+      };
+
+      const hideCursor = () => {
+        if (!cursorVisible) return;
+        cursorVisible = false;
+
+        document.body.classList.remove('custom-cursor-active');
+        cursorDot.style.display = 'none';
+        cursorOutline.style.display = 'none';
+
+        // Reset any hover/text state so nothing gets "stuck" active for next time
+        cursorDot.classList.remove('cursor-hover', 'cursor-text', 'dot-fading-in');
+        cursorOutline.classList.remove('cursor-hover', 'cursor-text', 'ring-expanding', 'ring-contracting');
+      };
+
+      // Real mouse/trackpad movement shows the cursor — fires every time, so
+      // switching back from touch reactivates it instantly.
+      window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        cursorDot.style.left = `${mouseX}px`;
+        cursorDot.style.top = `${mouseY}px`;
+
+        showCursor();
+      }, { passive: true });
+
+      // A genuine touch hides the custom cursor and restores the system cursor,
+      // but does NOT lock anything — the very next mousemove brings it right back.
+      window.addEventListener('touchstart', () => {
+        hideCursor();
+      }, { passive: true });
 
 
       // ==========================================
