@@ -650,6 +650,14 @@
             display: flex;
         }
 
+        /* Tablet range: keep the desktop toolbar layout, just trim the
+       viewer's height a bit so it doesn't dominate a shorter viewport */
+        @media (max-width: 900px) and (min-width: 641px) {
+            .pdf-stage {
+                height: min(70vh, 780px);
+            }
+        }
+
         @media (max-width: 640px) {
             .resume-header {
                 flex-direction: column;
@@ -665,12 +673,33 @@
             }
 
             .pdf-toolbar {
-                justify-content: center;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+            }
+
+            /* Bigger tap targets on touch screens — Apple/Android both
+         recommend ~40-44px minimum for comfortable tapping */
+            .pdf-tool-btn {
+                width: 40px;
+                height: 40px;
             }
 
             .pdf-stage {
-                padding: 20px 12px;
-                height: min(70vh, 700px);
+                padding: 16px 10px;
+                height: min(65vh, 680px);
+            }
+        }
+
+        @media (max-width: 400px) {
+            .pdf-stage {
+                padding: 12px 6px;
+                height: min(58vh, 560px);
+            }
+
+            .resume-header-actions {
+                flex-direction: column;
             }
         }
 
@@ -1036,6 +1065,25 @@
                 hideCursor();
             }, { passive: true });
 
+            let scrollbarDragActive = false;
+
+            window.addEventListener('mousedown', (e) => {
+                const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+                const nearRightEdge = scrollbarWidth > 0 && e.clientX >= document.documentElement.clientWidth;
+
+                if (nearRightEdge) {
+                    scrollbarDragActive = true;
+                    document.body.classList.add('cursor-window-hidden');
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (scrollbarDragActive) {
+                    scrollbarDragActive = false;
+                    document.body.classList.remove('cursor-window-hidden');
+                }
+            });
+
             // ==========================================
             // BACKGROUND DUST PARTICLES (same system as the main page)
             // ==========================================
@@ -1167,7 +1215,18 @@
             let currentScale = 1.0;
             const MIN_SCALE = 0.5;
             const MAX_SCALE = 2.5;
-            const BASE_FIT_WIDTH = 780; // reference width pages render at before zoom
+            // Reference width pages render at before zoom. Computed from the
+            // actual container width (not a fixed constant) — on phones and
+            // tablets a fixed 780px would render pages too wide, then rely on
+            // CSS max-width:100% to shrink them visually while the canvas's
+            // own explicit height stayed at the old large value, distorting
+            // the aspect ratio. Computing this dynamically avoids that.
+            const getFitWidth = () => {
+                const stageStyles = window.getComputedStyle(pdfStage);
+                const horizontalPadding = parseFloat(stageStyles.paddingLeft) + parseFloat(stageStyles.paddingRight);
+                const available = pdfStage.clientWidth - horizontalPadding;
+                return Math.max(220, Math.min(780, available));
+            };
 
             const updateZoomLabel = () => {
                 zoomLabel.textContent = `${Math.round(currentScale * 100)}%`;
@@ -1180,12 +1239,13 @@
 
                 pdfStage.innerHTML = '';
                 const dpr = window.devicePixelRatio || 1;
+                const fitWidth = getFitWidth();
                 const pageObserverTargets = [];
 
                 for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
                     const page = await pdfDoc.getPage(pageNum);
                     const baseViewport = page.getViewport({ scale: 1 });
-                    const fitScale = (BASE_FIT_WIDTH / baseViewport.width) * currentScale;
+                    const fitScale = (fitWidth / baseViewport.width) * currentScale;
                     const viewport = page.getViewport({ scale: fitScale * dpr });
 
                     const wrap = document.createElement('div');
@@ -1247,6 +1307,18 @@
                     pdfShell.classList.add('pdf-failed');
                 }
             };
+
+            // Re-fit pages on resize/orientation change (phones and tablets in
+            // particular) — debounced so we're not re-rendering on every pixel
+            // while a resize is in progress.
+            let resizeRerenderTimeout = null;
+            window.addEventListener('resize', () => {
+                if (!pdfDoc) return;
+                clearTimeout(resizeRerenderTimeout);
+                resizeRerenderTimeout = setTimeout(() => {
+                    renderAllPages();
+                }, 250);
+            });
 
             zoomInBtn.addEventListener('click', () => {
                 currentScale = Math.min(MAX_SCALE, +(currentScale + 0.15).toFixed(2));

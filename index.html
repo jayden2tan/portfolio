@@ -947,6 +947,11 @@
     }
 
     .skill-pill {
+      --pill-color: var(--text-muted);
+      /* fallback dot color when no level/custom color is set */
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       font-size: 0.9rem;
       font-weight: 500;
       background: var(--bg-surface-opaque);
@@ -960,9 +965,31 @@
         transform var(--transition-fast);
     }
 
+    .skill-pill::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background-color: var(--pill-color);
+      box-shadow: 0 0 6px 0 color-mix(in srgb, var(--pill-color) 60%, transparent);
+    }
+
+    .skill-pill[data-level="beginner"] {
+      --pill-color: #ef4444;
+    }
+
+    .skill-pill[data-level="intermediate"] {
+      --pill-color: #eab308;
+    }
+
+    .skill-pill[data-level="expert"] {
+      --pill-color: #22c55e;
+    }
+
     .skill-pill:hover {
       color: var(--text-primary);
-      border-color: var(--accent);
+      border-color: var(--pill-color);
       transform: translateY(-2px);
     }
 
@@ -1782,8 +1809,8 @@
         <div class="skills-category">
           <span class="skills-cat-title">Programming Languages</span>
           <div class="skills-list">
-            <span class="skill-pill">Python</span>
-            <span class="skill-pill">Java</span>
+            <span class="skill-pill" data-level="intermediate">Python</span>
+            <span class="skill-pill" data-level="beginner">Java</span>
           </div>
         </div>
 
@@ -1791,9 +1818,10 @@
         <div class="skills-category">
           <span class="skills-cat-title">Other</span>
           <div class="skills-list">
-            <span class="skill-pill">GitHub</span>
-            <span class="skill-pill">Linux</span>
-            <span class="skill-pill">CVAT</span>
+            <span class="skill-pill" data-level="expert">GitHub</span>
+            <span class="skill-pill" data-level="expert">Git</span>
+            <span class="skill-pill" data-level="intermediate">Linux</span>
+            <span class="skill-pill" data-level="intermediate">CVAT</span>
           </div>
         </div>
       </div>
@@ -2245,6 +2273,24 @@
         hideCursor();
       }, { passive: true });
 
+      let scrollbarDragActive = false;
+
+      window.addEventListener('mousedown', (e) => {
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const nearRightEdge = scrollbarWidth > 0 && e.clientX >= document.documentElement.clientWidth;
+
+        if (nearRightEdge) {
+          scrollbarDragActive = true;
+          document.body.classList.add('cursor-window-hidden');
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (scrollbarDragActive) {
+          scrollbarDragActive = false;
+          document.body.classList.remove('cursor-window-hidden');
+        }
+      });
 
       // ==========================================
       // MOBILE NAVIGATION DRAWER
